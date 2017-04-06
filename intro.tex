@@ -1,0 +1,168 @@
+\documentclass{beamer}
+\usepackage{amsmath}
+
+\definecolor{uwpurple}{RGB}{51,0,111}
+\definecolor{uwgold}{RGB}{232,211,162}
+\definecolor{uwmetallicgold}{RGB}{145,123,76}
+\definecolor{cffffff}{RGB}{255,255,255}
+
+\usetheme{Frankfurt}
+\setbeamertemplate{navigation symbols}{}
+\setbeamercolor{section in head/foot}{bg=uwpurple}
+\setbeamercolor{structure}{fg=uwmetallicgold}
+\setbeamercolor{block title}{bg=uwpurple}
+\addtobeamertemplate{block begin}{
+  \setbeamercolor{itemize item}{fg=uwpurple}
+  \setbeamercolor{itemize subitem}{fg=uwpurple}
+  \setbeamercolor{enumerate item}{fg=uwpurple}
+  \setbeamercolor{enumerate subitem}{fg=uwpurple}
+}{}
+\setbeamertemplate{itemize items}[default]
+\setbeamertemplate{enumerate items}[default]
+
+\usepackage{tikz}
+
+\title{Parallel Markov Chain Monte Carlo for Nonparametric Mixture Models}
+\author{Arman Bilge \\ \small\href{mailto:abilge@uw.edu}{\texttt{abilge@uw.edu}}}
+\institute{Statistics Department, University of Washington \\ Computational Biology Program, Fred Hutchinson Cancer Research Center}
+\date{April 6, 2017}
+
+\frenchspacing
+\begin{document}
+
+  \frame{\titlepage}
+
+  \section{Motivation}
+
+  \stepcounter{subsection}
+  \begin{frame}{Dirichlet Process}
+
+    \begin{itemize}
+      \item Model data that may repeat previous values
+      \item \emph{Rich get richer}
+      \item Parameters: base distribution $H$ and concentration $\alpha > 0$
+    \end{itemize}
+
+    \begin{block}{Simulation}
+      \begin{enumerate}
+        \item Sample $X_1 \sim H$
+        \item For $n > 1$ let
+        \begin{equation*}
+          \begin{cases}
+            X_n \sim H & \text{ with probability } \frac{\alpha}{\alpha + n - 1} \\
+            X_n = x & \text{ with probability } \frac{n_x}{\alpha + n - 1}
+          \end{cases}
+        \end{equation*}
+        where $n_x$ is number of previous occurrences of $x$
+      \end{enumerate}
+    \end{block}
+
+  \end{frame}
+
+  \stepcounter{subsection}
+  \begin{frame}{Dirichlet Process}
+    \centering
+    \begin{tikzpicture}[y=0.80pt, x=0.80pt, yscale=-1.000000, xscale=1.000000, inner sep=0pt, outer sep=0pt, scale=0.35]
+      \input{normal.tex}
+    \end{tikzpicture}
+  \end{frame}
+
+  \stepcounter{subsection}
+  \begin{frame}{Hiearchical Dirichlet Process}
+    \begin{align*}
+      G_0 &\sim \text{DP}(\alpha_0, H) \\
+      G_j &\sim \text{DP}(\alpha_j, G_0) \\
+      \theta_{ji} &\sim G_j \\
+      x_{ji} &\sim F(\theta_ji)
+    \end{align*}
+  \end{frame}
+
+  \stepcounter{subsection}
+  \begin{frame}{Dirichlet Processes}
+    \begin{block}{Properties}
+      \begin{itemize}
+        \item Allow for countably infinite components \emph{a priori}
+        \item Finite dataset modeled with finite, but random number of parameters
+        \item Model grows consistently when you observe more data
+        \item Almost surely discrete
+        \item When $\alpha \to 0$, all samples are concentrated on a single value
+        \item When $\alpha \to \infty$, samples become continuous
+      \end{itemize}
+    \end{block}
+    \begin{block}{Challenges}
+      \begin{itemize}
+        \item Slow inference with large memory requirement
+      \end{itemize}
+    \end{block}
+  \end{frame}
+
+  \stepcounter{subsection}
+  \begin{frame}{Applications}
+    \begin{itemize}
+      \item Clustering
+      \item Natural language processing, e.g. topic allocation
+      \item Molecular evolution
+      \item Infinite mixture models
+      \item Machine learning, esp. unsupervised learning
+      \item Infinite hidden Markov models
+    \end{itemize}
+  \end{frame}
+
+  \section{Parallelization}
+
+  \stepcounter{subsection}
+  \begin{frame}{Parallelization}
+    \begin{itemize}
+      \item Speed up computation by splitting work onto multiple cores/machines
+      \item To parallelize statistical algorithm, must exploit (conditional) independencies
+      \item Difficult with DP: allocation of single point depends on allocations of all other points
+      \item Existing strategies: approximate Gibbs sampling, variational inference (VI), and sequential Monte Carlo (SMC)
+    \end{itemize}
+  \end{frame}
+
+  \stepcounter{subsection}
+  \begin{frame}{Approximate parallel Gibbs sampling}
+    \begin{itemize}
+      \item Hopefully okay to assume independence ``breaking'' long-range dependencies
+      \item Divide data onto $P$ processors, but each processor keeps copy of allocations
+      \item Each processor updates $1/P$ of the allocations using its stored copy of allocations
+      \item Note that allocations quickly go out of sync between processors; solved by periodic synchronization
+      \item Amalgation can cause problems with cluster alignment; no clear precedence
+      \item Note that synchronization is a bottleneck
+      \item Can also avoid global synchronization, but have slower convergence
+    \end{itemize}
+  \end{frame}
+
+  \stepcounter{subsection}
+  \begin{frame}{Variational Inference}
+    \begin{itemize}
+      \item Approximate posterior $p(\theta\mid X)$ with easy distribution $q(\theta)$
+      \item Fit $q$ to $p$ by minizing Kullback-Leibler divergence $$D_\text{KL}(q \mid\mid P) = E_q\left[\log\frac{q(\theta)}{p(\theta\mid X)}\right]$$
+      \item $q$ typically chosen assuming independencies not in true posterior
+      \item VI algorithms are easy to parallelize
+      \item Loss of expressiveness and accuracy
+    \end{itemize}
+  \end{frame}
+
+  \stepcounter{subsection}
+  \begin{frame}{Sequential Monte Carlo}
+    \begin{itemize}
+      \item Approximate posterior $p(\theta\mid X)$ with a swarm of weighed, sequentially updated, particles
+      \item Each particle and weight can be updated independently and consider only one datapoint at a time
+      \item More specifically, datapoints are gradually added to each particle according to a proposal kernel
+      \item However, can have explosion of estimate variance if particles are completely isolated
+      \item Resampling with replacement according to the weights helps to prevent this, but cannot be done in parallel
+    \end{itemize}
+  \end{frame}
+
+  \section{Conclusion}
+
+  \stepcounter{subsection}
+  \begin{frame}{Concluding Remarks}
+    \begin{itemize}
+      \item This paper develops an exact parallel method using auxiliary variables to introduce conditional independencies \ldots more to come
+      \item Thank you!
+    \end{itemize}
+  \end{frame}
+
+\end{document}
