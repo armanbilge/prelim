@@ -10,14 +10,10 @@ class SimpleDPOperator[A <: Double, H <: Probability[Double], X](implicit rng: G
     DirichletProcess._clusters[A, H, X].modify { clusters =>
       val cp = clusters.map(dp.cl.remove(_, x)) + dp.cl.empty
       val i = rng.nextInt(cp.size)
-      val cpp = cp.view.zipWithIndex.map(Function.tupled((h, j) => if (i == j) dp.cl.add(h, x) else h)).filter(dp.cl.size(_) > 0).toSet
-      hr = math.log(cp.size.toDouble / (cpp.map(dp.cl.remove(_, x)) + dp.cl.empty).size)
-      cpp
+      cp.view.zipWithIndex.map(Function.tupled((h, j) => if (i == j) dp.cl.add(h, x) else h)).filter(dp.cl.size(_) > 0).toSet
     }(dp)
   }
 
-  var hr: Double = 0.0
-
-  override def hastingsRatio(x: DirichletProcess[A, H, X], y: DirichletProcess[A, H, X]): Double = hr
+  override def hastingsRatio(x: DirichletProcess[A, H, X], y: DirichletProcess[A, H, X]): Double = 0
 
 }
