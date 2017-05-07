@@ -17,7 +17,7 @@ class DirichletProcess[A <: Double, H <: Probability[Double], X](_xs: => Indexed
 
 object DirichletProcess {
 
-  def apply[A <: Double, H <: Probability[Double], X](xs: IndexedSeq[X], alpha: A)(implicit cl: IsCluster[H, X]) = new DirichletProcess[A, H, X](xs, alpha, xs.map(cl.of).toSet)()
+  def apply[A <: Double, H <: Probability[Double], X](xs: IndexedSeq[X], alpha: A)(implicit cl: IsCluster[H, X]) = new DirichletProcess[A, H, X](xs, alpha, xs.map(cl.of).toSet)
 
   trait IsCluster[H, X] {
     def empty: H
