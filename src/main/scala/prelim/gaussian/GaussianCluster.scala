@@ -20,6 +20,13 @@ class GaussianCluster(val xs: Set[Double]) extends Probability[Double] {
     new NormalDistribution(`mu_n`, `sigma_n^2` + 1).logDensity(x)
   }
 
+  override def equals(that: Any): Boolean = that match {
+    case that: GaussianCluster => this.xs == that.xs
+    case _ => false
+  }
+
+  override def hashCode(): Int = xs.hashCode()
+
 }
 
 object GaussianCluster {
@@ -36,7 +43,10 @@ object GaussianCluster {
 
     override def add(h: GaussianCluster, x: Double): GaussianCluster = new GaussianCluster(h.xs + x)
 
-    override def remove(h: GaussianCluster, x: Double): GaussianCluster = new GaussianCluster(h.xs - x)
+    override def remove(h: GaussianCluster, x: Double): GaussianCluster = if (h.xs.contains(x))
+      new GaussianCluster(h.xs - x)
+    else
+      h
 
     override def posteriorPredictive(h: GaussianCluster, x: Double): Double = h.predict(x)
 
