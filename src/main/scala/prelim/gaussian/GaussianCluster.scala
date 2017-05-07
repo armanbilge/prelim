@@ -41,6 +41,8 @@ object GaussianCluster {
 
     override def of(xs: Set[Double]): GaussianCluster = new GaussianCluster(xs)
 
+    override def values(h: GaussianCluster): Set[Double] = h.xs
+
     override def add(h: GaussianCluster, x: Double): GaussianCluster = new GaussianCluster(h.xs + x)
 
     override def remove(h: GaussianCluster, x: Double): GaussianCluster = if (h.xs.contains(x))

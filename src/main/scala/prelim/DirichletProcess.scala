@@ -23,6 +23,7 @@ object DirichletProcess {
     def of(x: X): H
     def of(xs: Set[X]): H
     def add(h: H, x: X): H
+    def values(h: H): Set[X]
     def remove(h: H, x: X): H
     def posteriorPredictive(h: H, x: X): Double
   }
