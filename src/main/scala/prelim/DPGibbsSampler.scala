@@ -2,6 +2,7 @@ package prelim
 
 import mcmc.{Multinomial, Operator, Probability}
 import spire.random.Generator
+import spire.std.double._
 
 class DPGibbsSampler[A <: Double, H <: Probability[Double], X](implicit rng: Generator) extends Operator[DirichletProcess[A, H, X], Double] {
 
