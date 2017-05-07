@@ -16,6 +16,6 @@ class DPGibbsSampler[A <: Double, H <: Probability[Double], X](implicit rng: Gen
     }(dp)
   }
 
-  override def hastingsRatio(x: DirichletProcess[A, H, X], y: DirichletProcess[A, H, X]): Double = x.evaluate / y.evaluate
+  override def hastingsRatio(x: DirichletProcess[A, H, X], y: DirichletProcess[A, H, X]): Double = x.evaluate - y.evaluate
 
 }
