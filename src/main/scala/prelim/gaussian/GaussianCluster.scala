@@ -17,7 +17,7 @@ class GaussianCluster(val xs: Set[Double]) extends Probability[Double] {
     val xsum = xs.sum
     val `sigma_n^2` = 1.0 / (n + 1)
     val `mu_n` = `sigma_n^2` * xsum
-    new NormalDistribution(`mu_n`, `sigma_n^2` + 1).logDensity(x)
+    new NormalDistribution(`mu_n`, math.sqrt(`sigma_n^2` + 1)).logDensity(x)
   }
 
   override def equals(that: Any): Boolean = that match {
