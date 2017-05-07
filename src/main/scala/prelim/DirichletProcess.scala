@@ -15,10 +15,13 @@ class DirichletProcess[A <: Double, H <: Probability[Double], X](val xs: Indexed
 
 object DirichletProcess {
 
+  def apply[A <: Double, H <: Probability[Double], X](xs: IndexedSeq[X], alpha: A)(implicit cl: IsCluster[H, X]) = new DirichletProcess[A, H, X](xs, alpha, Set(cl.of(xs.toSet)))()
+
   trait IsCluster[H, X] {
     def empty: H
     def size(h: H): Int
-    def singleton(x: X): H
+    def of(x: X): H
+    def of(xs: Set[X]): H
     def add(h: H, x: X): H
     def remove(h: H, x: X): H
     def posteriorPredictive(h: H, x: X): Double
