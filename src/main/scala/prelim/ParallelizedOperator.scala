@@ -2,12 +2,10 @@ package prelim
 
 import mcmc.Operator
 
-import scala.collection.GenSeq
+class ParallelizedOperator[T](op: Operator[T, Double]) extends Operator[IndexedSeq[T], Double] {
 
-class ParallelizedOperator[T](op: Operator[T, Double]) extends Operator[GenSeq[T], Double] {
+  override def apply(t: IndexedSeq[T]): IndexedSeq[T] = t.par.map(op).to
 
-  override def apply(t: GenSeq[T]): GenSeq[T] = t.par.map(op)
-
-  override def hastingsRatio(x: GenSeq[T], y: GenSeq[T]): Double = (x, y).zipped.map(op.hastingsRatio).sum
+  override def hastingsRatio(x: IndexedSeq[T], y: IndexedSeq[T]): Double = (x, y).zipped.map(op.hastingsRatio).sum
 
 }
