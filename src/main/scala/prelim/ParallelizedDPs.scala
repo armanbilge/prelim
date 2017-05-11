@@ -18,7 +18,7 @@ object ParallelizedDPs {
     new ParallelizedDPs[A, H, X](alpha, dps)()()
 
   implicit def _alpha[A <: Double, H <: Probability[Double], X]: Lens[ParallelizedDPs[A, H, X], A] =
-    Lens[ParallelizedDPs[A, H, X], A](_.alpha)(alpha => pdp => ParallelizedDPs[A, H, X](alpha, pdp.dps.map(DirichletProcess._a[A, H, X].set(alpha))))
+    Lens[ParallelizedDPs[A, H, X], A](_.alpha)(alpha => pdp => ParallelizedDPs[A, H, X](alpha, pdp.dps.map(DirichletProcess._a[A, H, X].set((alpha / pdp.K).asInstanceOf[A]))))
 
   implicit def _dps[A <: Double, H <: Probability[Double], X]: Lens[ParallelizedDPs[A, H, X], IndexedSeq[DirichletProcess[A, H, X]]] =
     Lens[ParallelizedDPs[A, H, X], IndexedSeq[DirichletProcess[A, H, X]]](_.dps)(dps => pdp => new ParallelizedDPs[A, H, X](pdp.alpha, dps)(pdp.n, pdp.K, pdp.a)(pdp.Z))
