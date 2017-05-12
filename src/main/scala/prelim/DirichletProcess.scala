@@ -13,6 +13,8 @@ class DirichletProcess[A <: Double, H <: Probability[Double], X](_xs: => Indexed
 
   override lazy val evaluate: Double =  Z + clusters.view.map(x => Gamma.logGamma(cl.size(x))).sum + clusters.view.map(_.evaluate).sum
 
+  override def toString: String = clusters.mkString("{", ",", "}")
+
 }
 
 object DirichletProcess {

@@ -10,6 +10,8 @@ class ParallelizedDPs[A <: Double, H <: Probability[Double], X](val alpha: A, va
 
   lazy val evaluate: Double = - Z + dps.map(dp => - Gamma.logGamma(dp.clusters.size + 1) + Gamma.logGamma(dp.clusters.size + a) + dp.evaluate).sum
 
+  override def toString: String = dps.mkString("[", ",", "]")
+
 }
 
 object ParallelizedDPs {

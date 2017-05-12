@@ -14,6 +14,8 @@ class TestCluster[X](val xs: Set[X]) extends Probability[Double] {
 
   override def hashCode(): Int = xs.hashCode()
 
+  override def toString: String = xs.mkString("{", ",", "}")
+
 }
 
 object TestCluster {
