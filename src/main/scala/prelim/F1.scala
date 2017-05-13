@@ -1,6 +1,8 @@
 package prelim
 
-class F1[X](groundTruth: Traversable[Set[X]]) extends (Traversable[Set[X]] => Double) {
+import scala.reflect.ClassTag
+
+class F1[X : ClassTag](groundTruth: Traversable[Set[X]]) extends (Traversable[Set[X]] => Double) {
 
   val Pg = extractPairs(groundTruth)
 
