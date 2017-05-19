@@ -10,42 +10,157 @@
 
 \bibliographystyle{plainnat}
 
+\usepackage{amsmath,amssymb}
+
 \begin{document}
 %%\maketitle
 
+\frenchspacing
+
 \begin{center}
-  {\LARGE Title of your project goes here}\\\ \\
-  {Anonymous Student \\
-    Department of Statistics, University of Washington Seattle, WA, 98195, USA
-  }
+  {\Large Parallel Markov Chain Monte Carlo for Nonparametric Mixture Models by \citet*{WDX13}}\\\ \\
+  {Arman Bilge}
 \end{center}
 
-
-
 \begin{abstract}
-  Put your project summary here.
 \end{abstract}
 
 \section{Introduction}
-My favorite bedtime reading is \citet{Karlin1975}'s book. I also like to keep a copy of
-\citep{Baum1970} on my coffee table.
 
+The classification and categorization of things plays a critical role in human cognition, and thus emulating this behaviour is of key interest for artificial intelligence research.
+Many useful tasks can be formulated as classification or clustering, including identifying the topics of documents \citep{ASW08}, recognizing different speakers in an audio recording \citep{Fox+08}, and determining the features of an image \citep{Sud+06}.
+The scientific process also relies heavily on classification to explain patterns across observations.
+For example, geneticists are often interested in the underlying structure of a population \citep{Teh+06,HA07,Ior+15} and molecular evolutionary biologists seek to model heterogeneous mutation rates across the genome \citep{Moo+14} and species \citep{HHH12} due to varying selective pressures.
+
+Generally, observations in the same category are not exactly identical but demonstrate some variation.
+We can define a category by a probability distribution and let observations belonging to this category be independently and identically distributed samples from the distribution.
+In practice, usually these probability distributions belong to the same family and thus a category can be defined by the parameter indexing the family.
+However, for a classification procedure to be independent of human expertise (i.e., \emph{unsupervised learning}), the distributions defining the categories and even the total number of categories should be determined automatically from the observations without being specified \textit{a priori}.
+This uncertainty in the number of categories motivates the use of non-parametric Bayesian mixture models, such as those based on the Dirichlet process (DP) \citep{Fer73}.
+The DP specifies a prior distribution where the number of categories represented by a (finite) set of observations is a random variable that is bounded only by the total number of observations (i.e., there cannot be more categories than observations).
+Importantly, this enables the number of categories to grow with the number of observations, as needed.
+Another useful property of DP-based models is their consistency.
+% TODO Is this a correct explanation of consistency?
+Additional observations can be easily incorporated into an existing model without changing the definitions of any of its categories; if necessary, new categories are added to accommodate.
+Finally, the parameterization of the DP permits a recursion to construct the hierarchical DP (HDP) \citep{TJ10}.
+Other non-parametric models used for classification include the Pitman--Yor \citep{PY97} and Indian buffet processes \citep{GG06}.
+
+Under the Bayesian paradigm, we want to consider any particular classification of the observations according to its posterior probability.
+However, computing the posterior exactly is intractable due to its normalizing constant involving a sum over all possible clusterings of the observations, whose number grows super-exponentially in the number of observations.
+Thus we resort to Monte Carlo strategies to approximate the posterior distribution from its unnormalized density, such as Markov chain Monte Carlo (MCMC).
+Fortunately, the aforementioned consistency of DP mixture models (DPMMs) makes them amenable to Gibbs sampling.
+In special cases involving conjugate distributions, the Gibbs sampler need not condition on the categories' definining parameters, and the category assignment of an observation can be sampled conditioning directly on the assignments of all other observations \citep{Nea00}.
+
+But for increasing numbers of observations, inference with a na\"ive Gibbs sampler is slow and requires significant memory \citep{WDX13}.
+Distributed computation in the form of parallelization on multiple processors can be used to address both of these problems, but it is not obvious how this can be applied to inference of DPMMs.
+\citet{WDX13} observe that in a statistical context the use of parallelization relies on independencies in the model.
+The DPMM lacks this property as the classification of an observation depends on the classification of all other observations.
+This did not stop \citet{ASW08} from developing an approximately parallel Gibbs sampler by disregarding some of these conditional dependencies.
+Specifically, each processor performs Gibbs sampling for a subset of the observations while ignoring the sampling done by the other processors.
+As a result, the clusters on the processors go out of sync very quickly and must be re-synchronized periodically.
+This step cannot be parallelized and is particularly problematic when it is necessary to resolve conflicts across processors.
+
+Other Monte Carlo methods have also been used for efficient inference for DPMMs, such as variational inference (VI) \citep{BJ06,TKW07}.
+VI can be described as reducing inference to an optimization problem.
+% TODO Verify that KL targets posterior (and not other way around)
+This is done by selecting a family of distributions and identifing the member of this family that minimizes the Kullback--Leibler divergence targeting the posterior.
+Ideally the family is chosen to be easy to sample from, typically by its factorizability
+Although VI can be very fast, the approximation may significantly hinder the accuracy of the fitted model \citep{WDX13}.
+
+Besides the aforementioned approximate inference techniques, \citet{UBC10} describe a sequential Monte Carlo (SMC) method for asymptotically exact inference.
+To approximate the posterior, SMC uses a collection of independent, weighted particles, each representing a model.
+SMC applies well to DPMMs due to the ease of constructing the model sequentially, one observation at a time.
+Futhermore, because the particles are independent, these sequential updates can be done in parallel.
+However, SMC methods are limited by large variance in their estimates, which can only be controlled by non-parallelizable resampling step.
+
+More recently, variable augmentation has been used to construct exact MCMC samplers for DPMMs.
+\citet{WDX13} and \citet{Lov+13} independently introduced high-level auxiliary variables that represent ``superclusters''.
+Because the clusters belonging to a supercluster are conditionally independent of all other clusters, a parallel Gibbs sampler can be run for each supercluster.
+Finally, to guarantee ergodicity, a Metropolis--Hastings proposal is used to periodically sample supercluster membership.
+Alternatively, the auxiliary variable scheme developed by \citet{CF13,CF14} is at a lower level: by annotating clusters with ``left'' and ``right'' halves, they enable efficient splitting and merging of clusters in parallel.
+Although variable augmentation enables parallelization of inference, \citet{GG14} demonstrate that this parallelization can be sub-optimal due to a poor distribution of computational burden across the processors.
+When there is an uneven dissemination of observations within clusters and clusters across processors, the processor assigned the most observations will be the bottleneck, with all other processors idling until it completes.
+
+In this report, I describe the auxiliary variable scheme for MCMC sampling of DPMMs developed by \citet{WDX13}.
+To demonstrate the performance gains, I implement their method for inference of Gaussian mixture models (GMMs) and human population structure via genetic markers.
 
 \section{Methods}
 
-\section{Results}
 
-\section{Discussion}
+
+\subsection{The Dirichlet Process}
+
+
+There are multiple equivalent constructions of the DP,
+
+\subsection{Parallelizing the DPMM}
+
+\begin{equation}
+  D \sim \text{DP}\left(\alpha, H\right),\;
+  \theta_i \sim D, \;
+  x_i \sim f\left(\theta_i\right)
+\end{equation}
+
+\subsubsection{An MCMC sampler}
+
+\subsubsection{Application to Gaussian mixture model}
+
+
+
+\subsubsection{Experimental evaluation}
+
+Following \citet{WDX13}, I simulated a dataset
+
+\citet{GG14}
+
+I validated my implementation of AVparallel for GMMs against exact posterior probabilities calculated in \texttt{R} for small numbers of observations.
+I also designed a simple, ergodic MH proposal to compare results against (details in Appendix).
+
+\subsection{Parallelizing the HDPMM}
+
+We now focus our attention to the hierarchical DP mixture model.
+
+\begin{equation}
+  D_0 \sim \text{DP}\left(\alpha, H\right),\;
+  D_m \sim \text{DP}\left(\gamma, H\right), \;
+  \theta_{mi} \sim D_m, \;
+  x_{mi} \sim f\left(\theta_{mi}\right)
+\end{equation}
+
+To enable parallelization via the same strategy we make the assumption that
+\begin{equation}
+  \gamma \sim \Gamma\left(\alpha, 1\right)
+\end{equation}
+
+\subsubsection{An MCMC sampler}
+
+\subsubsection{Application to inferring population structure}
+
+\subsubsection{Experimental evaluation}
+
+
+\section{Results and Discussion}
+
+
 
 \bibliography{\jobname}
 
+\section{Appendix}
+
+\subsection{A MH proposal}
+
+
+
+\subsection{Solving for $\alpha$}
+
+\citet{HA07} give the expected number of clusters $K$ for $n$ observations from a DP with concentration $\alpha$ to be approximately
+\begin{equation}
+\bar{K} = \mathbb{E}\left[K \mid \alpha, n\right] \approx \alpha \log{\left(1 + \frac{n}{\alpha}\right)}.
+\end{equation}
+Given $\bar{K}$, we may solve for $\alpha$ by
+\begin{equation}
+\alpha = - \frac{\bar{K} n}{\bar{K} + n W_{-1}\left(-\frac{\bar{K}\exp\left(-\bar{K}/n\right)}{n}\right)}
+\end{equation}
+where $W_{-1}\left(\cdot\right)$ is the lower branch of the Lambert-W function defined by $x = W\left(x\right)e^{W\left(x\right)}$ for $x \in \mathbb{R}$ \citep{Cor+96}.
+
 \end{document}
-
-
-
-
-
-
-
-
-
