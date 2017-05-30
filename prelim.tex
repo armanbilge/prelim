@@ -64,7 +64,7 @@ Other Monte Carlo methods have also been used for efficient inference for DPMMs,
 VI can be described as reducing inference to an optimization problem.
 % TODO Verify that KL targets posterior (and not other way around)
 This is done by selecting a family of distributions and identifing the member of this family that minimizes the Kullback--Leibler divergence targeting the posterior.
-Ideally the family is chosen to be easy to sample from, typically by its factorizability
+Ideally the family is chosen to be easy to sample from, typically by its factorizability.
 Although VI can be very fast, the approximation may significantly hinder the accuracy of the fitted model \citep{WDX13}.
 
 Besides the aforementioned approximate inference techniques, \citet{UBC10} describe a sequential Monte Carlo (SMC) method for asymptotically exact inference.
@@ -99,13 +99,15 @@ There are multiple equivalent constructions of the DP,
   D \sim \text{DP}\left(\alpha, H\right),\;
   \theta_i \sim D, \;
   x_i \sim f\left(\theta_i\right)
+  \label{eq:dpmm}
 \end{equation}
+for observations $i = 1,\ldots,n$.
 
 \subsubsection{An MCMC sampler}
 
 \subsubsection{Application to Gaussian mixture model}
 
-
+Take
 
 \subsubsection{Experimental evaluation}
 
@@ -114,22 +116,22 @@ Following \citet{WDX13}, I simulated a dataset
 \citet{GG14}
 
 I validated my implementation of AVparallel for GMMs against exact posterior probabilities calculated in \texttt{R} for small numbers of observations.
-I also designed a simple, ergodic MH proposal to compare results against (details in Appendix).
+I also designed a simple, ergodic MH proposal to compare results against (details in \ref{sec:mh-proposal}).
 
 \subsection{Parallelizing the HDPMM}
 
 We now focus our attention to the hierarchical DP mixture model.
-
 \begin{equation}
   D_0 \sim \text{DP}\left(\alpha, H\right),\;
-  D_m \sim \text{DP}\left(\gamma, H\right), \;
+  D_m \sim \text{DP}\left(\gamma, D_0\right), \;
   \theta_{mi} \sim D_m, \;
   x_{mi} \sim f\left(\theta_{mi}\right)
+  \label{eq:hdpmm}
 \end{equation}
-
-To enable parallelization via the same strategy we make the assumption that
+where in group $m = 1,\dots,M$ we make observations $i = 1,\ldots,n_m$.
+To enable parallelization via the same strategy as the DPMM we make the assumption that
 \begin{equation}
-  \gamma \sim \Gamma\left(\alpha, 1\right)
+  \gamma \sim \Gamma\left(\alpha, 1\right).
 \end{equation}
 
 \subsubsection{An MCMC sampler}
@@ -147,7 +149,7 @@ To enable parallelization via the same strategy we make the assumption that
 
 \section{Appendix}
 
-\subsection{A MH proposal}
+\subsection{A MH proposal} \label{sec:mh-proposal}
 
 
 
